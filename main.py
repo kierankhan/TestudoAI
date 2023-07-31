@@ -14,7 +14,8 @@ from langchain.llms import OpenAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools import BaseTool
 from langchain.vectorstores import FAISS
-
+from matplotlib import pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 
 embeddings = OpenAIEmbeddings()
 chat = ChatOpenAI(model="gpt-3.5-turbo")
@@ -169,7 +170,8 @@ class GetGradeDataTool(BaseTool):
     name = "get_grade_data"
     description = "Use this tool when you need to get the grade data for a specific course or professor" \
                   "To use the tool you must provide at least one of the following parameters ['course', 'professor']" \
-                  "Do NOT input a course by doing 'course: [course]', just the course name will do. " \
+                  "Do NOT input a course by doing 'course: [course]' or 'prof_name: [professor]', just the course name " \
+                  "or professors name will do. YOUR ACTION INPUT SHOULD NOT BE IN THE FORMAT 'prof_name: [professor]' PLEASE!!!!" \
                   "MUST PROVIDE AT LEASE ONE OF EITHER A COURSE NAME OR PROFESSOR NAME AS THE INPUT! If the user provides " \
                   "a semester, use that as the input ['semester']. The input to semester will be a six digit " \
                   "number where the first four digits are the year and the last two numbers specify fall or spring. " \
@@ -198,6 +200,8 @@ class GetGradeDataTool(BaseTool):
         raw_data = requests.get(query)
         json_data = raw_data.json()
 
+        total = 0
+
         result = {}
         for i in json_data[-40:]:
             result["A+"] = int(result.get("A+", "0")) + int(i["A+"])
@@ -214,6 +218,20 @@ class GetGradeDataTool(BaseTool):
             result["D-"] = int(result.get("D-", "0")) + int(i["D-"])
             result["F"] = int(result.get("F", "0")) + int(i["F"])
             result["W"] = int(result.get("W", "0")) + int(i["W"])
+
+            # plt.rcParams["figure.figsize"] = [7.00, 3.50]
+            # plt.rcParams["figure.autolayout"] = True
+        names = list(result.keys())
+        vals = list(result.values())
+        total = 0.0
+        for i in vals:
+            total += i
+        for j in range(0, len(vals)):
+            vals[j] = (vals[j] /total) * 100
+
+        plt.bar(range(len(result)), vals, tick_label=names)
+        plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d%%'))
+        plt.show()
 
 
         return result
