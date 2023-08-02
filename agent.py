@@ -2,7 +2,7 @@ import requests
 from langchain.llms import OpenAI
 from typing import Optional, Type
 from langchain import LLMMathChain, SerpAPIWrapper, LLMChain
-from langchain.agents import AgentType, initialize_agent, ZeroShotAgent, AgentExecutor
+from langchain.agents import AgentType, initialize_agent, ZeroShotAgent, AgentExecutor, ConversationalChatAgent
 from langchain.chat_models import ChatOpenAI
 from langchain.tools import BaseTool, StructuredTool, Tool, tool
 from langchain.chat_models import ChatOpenAI
@@ -57,7 +57,7 @@ prefix = """You are a Planet Terp AI Assistant that helps students with getting 
 may make informed decisions on which classes to take. Course names are identified as four letters followed by three numbers with no separation. Examples
 include 'math141', 'CMSC330', 'chem135', 'MATH410'. Answer the following requests as best you can. When using tools that take a course name as input, 
 make sure to stick with the proper format for course names. You have access to the following tools:"""
-suffix = """Begin!"
+suffix = """Begin! Reminder to always use the exact characters `Final Answer` when responding.
 
 {chat_history}
 Question: {input}

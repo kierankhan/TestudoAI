@@ -16,15 +16,17 @@ from langchain.tools import BaseTool
 from langchain.vectorstores import FAISS
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+import json
+from langchain.agents.chat import base
 
 embeddings = OpenAIEmbeddings()
 chat = ChatOpenAI(model="gpt-3.5-turbo")
 
 
-def create_db_from_review_data(review_data):
+def create_db_from_review_data(review_data: str, chunk_size: int, overlap: int):
     loader = TextLoader(review_data)
     reviews = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap)
     docs = text_splitter.split_documents(reviews)
     db = FAISS.from_documents(docs, embeddings)
     sim_search = db.similarity_search(request)
@@ -58,30 +60,77 @@ class GetCourseTool(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("custom_search does not support async")
 
-class GetCoursesAsListTool(BaseTool):
-    name = "get_courses_as_list"
-    description = "Use this tool when you need to get a list of courses in a specific department.  " \
-                  "To use the tool you must provide only the following parameter ['dep_name'] " \
-                  "ONLY USE THE ONE PARAMETER ['dep_name'] AS THE INPUT AND NOTHING ELSE! " \
-                  "Your response should include a list of the course names, titles, and number of " \
-                  "credits. LIST IN ASCENDING ORDER IN COURSE NAME"
+class CourseSearchTool(BaseTool):
+    name = "course_search"
+    description = "Use this tool when you need to search for a course based on inputs OTHER THAN the course name. Your " \
+                  "input to this tool should be a comma separated list of strings with the parameter name and value desired. " \
+                  " The three possible parameters are 'credits', 'gen_ed', and 'dept_id'. Input the corresponding values " \
+                  "to the parameters based on what the user has said. " \
+                  "For example, 'credits:4,dept_id:MATH' would be the input if you wanted to search courses that are" \
+                  "4 credits in the math department. Another example is 'gen_ed:DVUP' if you wanted to search for " \
+                  "courses that fulfill the DVUP requirement. Your input should be at least one of these three parameters: " \
+                  "'credits', 'gen_ed', and 'dept_id'. The gen_ed codes are four letter acronyms and include only the following: " \
+                  "'DSNS', 'FSAR', 'DVUP', 'FSAW', 'FSMA', 'FSOC', 'FSPW', 'DSHS', 'DSNL', 'DSSP' 'DVCC', and 'SCIS'" \
+                  "The department id codes are also four letter acronyms (these include any four letter acronyms OTHER THAN the gen ed acronyms" \
+                  "If a link is returned from the tool, it is because the request exceeded the allotted token count and therefore " \
+                  "we must send them to the testudo website. Remember, the purpose of this tool is to give users a list" \
+                  "of courses that match their criteria, no need to do anything extra after that. Also, if you observe " \
+                  "that no courses matched the search criteria, that is ok--let the user know and await their response." \
 
     def _run(
-        self, dep_name: str
+        self,
+        all: Optional[str] = None,
     ):
+        # print("gened: " + gen_ed + ", credits: " + credits + ", dept_id: " + dept_id)
+        credits = None
+        gen_ed = None
+        dept_id = None
+        if all.find("credits:") != -1: credits = all[all.find("credits")+8]
+        if all.find("gen_ed") != -1: gen_ed = all[all.find("gen_ed")+7:all.find("gen_ed")+11]
+        if all.find("dept_id") != -1: dept_id = all[all.find("dept_id")+8:all.find("dept_id")+12]
+        # if credits is not None: credits = int(credits[-1])
+        # if gen_ed is not None: gen_ed = gen_ed[-4:-1]
+        # if dept_id is not None: dept_id = int(dept_id[len(dept_id)-1])
         """Use the tool, but only provide one parameter with the name 'course_name'"""
-        raw_data = requests.get(f"https://planetterp.com/api/v1/courses?department={dep_name}")
-        json_data = raw_data.json()
-        data = []
+        query = "https://api.umd.io/v1/courses?sort=course_id,-credits&per_page=50&page=1"
+        if credits is not None:
+            query += f"&credits={credits}"
+        if gen_ed is not None:
+            query += f"&gen_ed={gen_ed}"
+        if dept_id is not None:
+            query += f"&dept_id={dept_id}"
+        course_data = requests.get(query).json()
+        query += "&page=2"
+        course_data2 = requests.get(query).json()
+        if json.dumps(course_data2) != "[]":
+            testudo_link = "https://app.testudo.umd.edu/soc/search?courseId="+dept_id+"&sectionId=&termId=202308&" \
+                           "_openSectionsOnly=on&creditCompare=%3D&credits="+str(credits)+"&courseLevelFilter=ALL&instructor=&" \
+                           "_facetoface=on&_blended=on&_online=on&courseStartCompare=&courseStartHour=" \
+                           "&courseStartMin=&courseStartAM=&courseEndHour=&courseEndMin=&courseEndAM=" \
+                           "&teachingCenter=ALL&_classDay1=on&_classDay2=on&_classDay3=on&_classDay4=on&_classDay5=on"
+            return "Unfortunately I cannot analyze that many courses--here is the link to all of them on Testudo: " + testudo_link
+        print(course_data2)
+        minified_data = []
+        for i in course_data:
+            dict = {}
+            dict["course_id"] = i["course_id"]
+            dict["dept_id"] = i["dept_id"]
+            dict["department"] = i["department"]
+            dict["credits"] = i["credits"]
+            dict["gen_ed"] = i["gen_ed"]
+            minified_data.append(dict)
+        course_data_str = json.dumps(minified_data)
+        print(query)
         # text = raw_data.text
         # text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
         # docs = text_splitter.split_documents(text)
 
-        for i in json_data:
-            to_add = {"name": i["name"]}
-            data.append(to_add)
+        # f = open("courses.txt", "w")
+        # f.write(course_data_str)
+        # docs = create_db_from_review_data("courses.txt", 1000, 100)
 
-        return data
+        if len(minified_data) > 0: return minified_data
+        return "There are no courses that match this criteria"
 
     async def _arun(self):
         """Use the tool asynchronously."""
@@ -157,7 +206,7 @@ class GetProfReviews(BaseTool):
             review_data += i["review"]
         f = open("reviews.txt", "w")
         f.write(review_data)
-        docs = create_db_from_review_data("reviews.txt")
+        docs = create_db_from_review_data("reviews.txt", 500, 50)
         # db.similarity_search(request)
 
         return docs
@@ -170,21 +219,28 @@ class GetGradeDataTool(BaseTool):
     name = "get_grade_data"
     description = "Use this tool when you need to get the grade data for a specific course or professor" \
                   "To use the tool you must provide at least one of the following parameters ['course', 'professor']" \
-                  "Do NOT input a course by doing 'course: [course]' or 'prof_name: [professor]', just the course name " \
-                  "or professors name will do. YOUR ACTION INPUT SHOULD NOT BE IN THE FORMAT 'prof_name: [professor]' PLEASE!!!!" \
-                  "MUST PROVIDE AT LEASE ONE OF EITHER A COURSE NAME OR PROFESSOR NAME AS THE INPUT! If the user provides " \
-                  "a semester, use that as the input ['semester']. The input to semester will be a six digit " \
-                  "number where the first four digits are the year and the last two numbers specify fall or spring. " \
-                  "01 means Spring and 08 means Fall. For example, 202001 means Spring 2020." \
+                  "Your input to this tool should be a comma separated list of strings with the parameter name " \
+                  "and value desired ending with a semicolon. Also, if you need to input a professor, make sure to " \
+                  "put it at the end of the list. For example, 'semester:202108,professor:larry herman;' " \
+                  "would be the input if you wanted the grade data for professor larry herman in the Fall 2021. " \
+                  "Another example is 'course:INST154;' if you just wanted the grade data for that specific course. " \
+                  "If the user provides a semester, use that as the input ['semester']. The input to semester will " \
+                  "be a six digit number where the first four digits are the year and the last two numbers specify " \
+                  "fall or spring. 01 means Spring and 08 means Fall. For example, 202001 means Spring 2020." \
                   "Your response should the course name and/or professor and ALL of the grade data. You should " \
                   "draw conclusions based off this data on whether this is a favorable grade distribution or not."
 
     def _run(
         self,
-        course: Optional[str] = None,
-        professor: Optional[str] = None,
-        semester: Optional[int] = None
+        all: Optional[str] = None
     ):
+        course = None
+        professor = None
+        semester = None
+        if all.find("course") != -1: course = all[all.find("course")+7:all.find("course")+11]
+        if all.find("professor") != -1: professor = all[all.find("professor") + 10 : all.find(";")]
+        if all.find("semester") != -1: semester = all[all.find("semester") + 9 : all.find("semester")+15]
+        print(professor)
         query = "https://planetterp.com/api/v1/grades?"
         if course is not None:
             query += f"course={course}"
@@ -294,7 +350,7 @@ class SearchTool(BaseTool):
 ###################################TOOLS DONE#####################################################################
 tools = [
     GetCourseTool(),
-    GetCoursesAsListTool(),
+    CourseSearchTool(),
     GetProfsForCourseTool(),
     GetProfInfoTool(),
     SearchTool(),
@@ -307,7 +363,8 @@ tools = [
 prefix = """You are a Planet Terp AI Assistant that helps students with getting information on classes and professors so that they
 may make informed decisions on which classes to take. Course names are identified as four letters followed by three numbers with no separation. Examples
 include 'math141', 'CMSC330', 'chem135', 'MATH410'. Answer the following requests as best you can. When using tools that take a course name as input, 
-make sure to stick with the proper format for course names. You have access to the following tools:"""
+make sure to stick with the proper format for course names. Please be helpful, but do NOT do more than you think is necessry, 
+like taking extra steps when they are not needed. You have access to the following tools:"""
 suffix = """Begin!"
 
 {chat_history}
@@ -320,6 +377,7 @@ prompt = ZeroShotAgent.create_prompt(
     suffix=suffix,
     input_variables=["input", "chat_history", "agent_scratchpad"],
 )
+
 
 conversational_memory = ConversationBufferWindowMemory(
     memory_key='chat_history',
