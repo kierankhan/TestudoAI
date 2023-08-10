@@ -308,6 +308,7 @@ class GetGradeDataTool(BaseTool):
         # plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d%%'))
         plt.title(title + " Grade Data")
         plt.show()
+        st.pyplot(plt)
 
 
         return result
@@ -427,6 +428,7 @@ st.title('🦜🔗 TestudoAI')
 openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
 
 def generate_response(input_query):
+    print(openai_api_key)
     response = agent_chain.run(input_query)
     return st.success(response)
 
