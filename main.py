@@ -425,9 +425,9 @@ def generate_response(input_query):
     response = agent_chain.run(input_query)
     return st.success(response)
 
-query_text = st.text_input('Enter your question:', placeholder = 'Ask me anything course/professor related!')
 
-openai_api_key = st.text_input('OpenAI API Key', type='password', disabled=not query_text)
+openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
+query_text = st.text_input('Enter your question:', placeholder = 'Ask me anything course/professor related!', disabled=not openai_api_key)
 
 llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
