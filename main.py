@@ -443,8 +443,7 @@ with st.form('myform', clear_on_submit=True):
     if submitted and openai_api_key.startswith('sk-'):
             with st.spinner('Calculating...'):
                 response = generate_response(query_text)
-while not openai_api_key:
-    print("gahhh")
+
 llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
