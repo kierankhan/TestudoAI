@@ -434,7 +434,7 @@ def generate_response(input_query):
 
 
 
-query_text = st.chat_input('Enter your question:', placeholder='Ask me anything course/professor related!',
+query_text = st.chat_input(placeholder='Ask me anything course/professor related!',
                            disabled=not openai_api_key)
 
 
