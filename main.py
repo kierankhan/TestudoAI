@@ -444,7 +444,9 @@ def generate_response(input_query):
 with st.form('myform', clear_on_submit=True):
     query_text = st.text_input('Enter your question:', placeholder='Ask me anything course/professor related!',
                                disabled=not openai_api_key)
-    submitted = st.form_submit_button('Submit', disabled=not query_text)
+    submitted = st.form_submit_button('Submit')
+    if not openai_api_key.startswith('sk-'):
+        st.warning('Please enter your OpenAI API key!', icon='⚠')
     if submitted and openai_api_key.startswith('sk-'):
             with st.spinner('Calculating...'):
                 response = generate_response(query_text)
