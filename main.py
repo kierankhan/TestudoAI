@@ -443,8 +443,8 @@ query_text = st.chat_input(placeholder='Ask me anything course/professor related
                            disabled=not openai_api_key)
 
 
-llm_chain = LLMChain(llm=OpenAI(temperature=0), prompt=prompt)
-embeddings = OpenAIEmbeddings()
+llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
+embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
 agent_chain = AgentExecutor.from_agent_and_tools(
     agent=agent,
