@@ -421,37 +421,40 @@ conversational_memory = ConversationBufferWindowMemory(
 st.set_page_config(page_title='🦜🔗 TestudoAI')
 st.title('🦜🔗 TestudoAI')
 
+
+
+
+openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
+
 def generate_response(input_query):
+    llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+    agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
+    agent_chain = AgentExecutor.from_agent_and_tools(
+        agent=agent,
+        tools=tools,
+        verbose=True,
+        max_iterations=3,
+        memory=conversational_memory
+    )
     response = agent_chain.run(input_query)
     return st.success(response)
 
 
-openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
-query_text = st.text_input('Enter your question:', placeholder = 'Ask me anything course/professor related!', disabled=not openai_api_key)
-
-llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
-embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
-agent_chain = AgentExecutor.from_agent_and_tools(
-    agent=agent,
-    tools=tools,
-    verbose=True,
-    max_iterations=3,
-    memory=conversational_memory
-)
-
-submitted = st.form_submit_button('Submit', disabled=not query_text)
 with st.form('myform', clear_on_submit=True):
+    query_text = st.text_input('Enter your question:', placeholder='Ask me anything course/professor related!',
+                               disabled=not openai_api_key)
+    submitted = st.form_submit_button('Submit', disabled=not query_text)
     if submitted and openai_api_key.startswith('sk-'):
             with st.spinner('Calculating...'):
                 response = generate_response(query_text)
 
 request = input("What can I help you with? (Press q to quit) ")
-while request != "q":
-    agent_chain.run(f"Request: {request}")
-    # conversational_memory.chat_memory.add_user_message(request)
-    # conversational_memory.chat_memory.add_ai_message(response)
-    # print(conversational_memory.chat_memory.messages)
-    request = input("What can I help you with? ")
+# while request != "q":
+#     agent_chain.run(f"Request: {request}")
+#     # conversational_memory.chat_memory.add_user_message(request)
+#     # conversational_memory.chat_memory.add_ai_message(response)
+#     # print(conversational_memory.chat_memory.messages)
+#     request = input("What can I help you with? ")
 
 # grade_data = requests.get(f"https://api.planetterp.com/v1/grades?course={course_name}").json()
