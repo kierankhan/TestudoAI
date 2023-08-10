@@ -174,7 +174,9 @@ class GetProfInfoTool(BaseTool):
     description = "Use this tool when you need to get information about a specific professor (also known as 'profs', " \
                   "'instructors', or 'teachers'). This includes what courses the professors teach, average gpa, and more. " \
                   "To use the tool you must provide only the following parameter ['prof_name'] " \
-                  "ONLY USE THE ONE PARAMETER ['prof_name'] AS THE INPUT AND NOTHING ELSE!" \
+                  "ONLY USE THE ONE PARAMETER ['prof_name'] AS THE INPUT AND NOTHING ELSE! For example, your input " \
+                  "would be 'prof_name:Shalin Parekh' if you needed info on Shalin Parekh, or 'prof_name:Yumin Yan' " \
+                  "if you needed info on Yumin Yan" \
                   "The input to this tool should be the professors full name as given by the user. Provide a short " \
                   "summary of the professor, including what courses he/she teaches, type, and average rating."
 
@@ -183,6 +185,7 @@ class GetProfInfoTool(BaseTool):
     ):
         #prof_name = prof_name[10:]
         """Use the tool, but only provide one parameter with the name 'course_name'"""
+        prof_name = prof_name[10:]
         query = f"https://planetterp.com/api/v1/professor?name={prof_name}"
         data = requests.get(query).json()
 
@@ -202,7 +205,9 @@ class GetProfReviews(BaseTool):
                   "Please make your response around a paragraph long. The input to this tool should be the professors" \
                   "name with no quotation marks." \
                   "To use the tool you must provide only the following parameter ['prof_name'] " \
-                  "ONLY USE THE ONE PARAMETER ['prof_name'] AS THE INPUT AND NOTHING ELSE!" \
+                  "ONLY USE THE ONE PARAMETER ['prof_name'] AS THE INPUT AND NOTHING ELSE! For example, you would input " \
+                  "Larry Herman if you wanted reviews for Larry Herman, or Ilchul Yoon if you wanted reviews for him, " \
+                  "or Clyde Kruskal" \
 
     def _run(
         self, prof_name: str
