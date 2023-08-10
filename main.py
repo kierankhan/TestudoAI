@@ -17,7 +17,9 @@ from langchain.vectorstores import FAISS
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 import json
+import streamlit as st
 from langchain.agents.chat import base
+
 
 embeddings = OpenAIEmbeddings()
 chat = ChatOpenAI(model="gpt-3.5-turbo")
@@ -95,10 +97,16 @@ class CourseSearchTool(BaseTool):
         query = "https://api.umd.io/v1/courses?sort=course_id,-credits&per_page=50&page=1"
         if credits is not None:
             query += f"&credits={credits}"
+        else:
+            credits = "3"
         if gen_ed is not None:
             query += f"&gen_ed={gen_ed}"
+        else:
+            gen_ed = ""
         if dept_id is not None:
             query += f"&dept_id={dept_id}"
+        else:
+            dept_id = ""
         course_data = requests.get(query).json()
         query += "&page=2"
         course_data2 = requests.get(query).json()
@@ -164,7 +172,7 @@ class GetProfsForCourseTool(BaseTool):
 class GetProfInfoTool(BaseTool):
     name = "get_profs_info"
     description = "Use this tool when you need to get information about a specific professor (also known as 'profs', " \
-                  "'instructors', or 'teachers'). This includes what courses the professors teach, grade data, and more. " \
+                  "'instructors', or 'teachers'). This includes what courses the professors teach, average gpa, and more. " \
                   "To use the tool you must provide only the following parameter ['prof_name'] " \
                   "ONLY USE THE ONE PARAMETER ['prof_name'] AS THE INPUT AND NOTHING ELSE!" \
                   "The input to this tool should be the professors full name as given by the user. Provide a short " \
@@ -173,6 +181,7 @@ class GetProfInfoTool(BaseTool):
     def _run(
         self, prof_name: str
     ):
+        #prof_name = prof_name[10:]
         """Use the tool, but only provide one parameter with the name 'course_name'"""
         query = f"https://planetterp.com/api/v1/professor?name={prof_name}"
         data = requests.get(query).json()
@@ -187,7 +196,7 @@ class GetProfReviews(BaseTool):
     name = "get_profs_reviews"
     description = "Use this tool when you need to get the reviews for a specific professor (also known as profs, " \
                   "instructors, or teachers). If the user wants to know if a professor is good or bad, or other " \
-                  "students' opinion on the professor, use this tool. You will documents with reviews of the" \
+                  "students' opinion on the professor, use this tool. You will receive documents with reviews of the" \
                   "professor. Please only use factual information that you get from the documents provided. Your answers" \
                   " should be verbose and detailed, and most importantly they should answer the USER'S ORIGINAL QUESTION. " \
                   "Please make your response around a paragraph long. The input to this tool should be the professors" \
@@ -227,8 +236,8 @@ class GetGradeDataTool(BaseTool):
                   "If the user provides a semester, use that as the input ['semester']. The input to semester will " \
                   "be a six digit number where the first four digits are the year and the last two numbers specify " \
                   "fall or spring. 01 means Spring and 08 means Fall. For example, 202001 means Spring 2020." \
-                  "Your response should the course name and/or professor and ALL of the grade data. You should " \
-                  "draw conclusions based off this data on whether this is a favorable grade distribution or not."
+                  "Your response should the course name and/or professor and a very brief summarization of the grade data " \
+                  ". You should draw conclusions based off this data on whether this is a favorable grade distribution or not."
 
     def _run(
         self,
@@ -237,21 +246,20 @@ class GetGradeDataTool(BaseTool):
         course = None
         professor = None
         semester = None
-        if all.find("course") != -1: course = all[all.find("course")+7:all.find("course")+11]
+        if all.find("course") != -1: course = all[all.find("course")+7:all.find("course")+14]
         if all.find("professor") != -1: professor = all[all.find("professor") + 10 : all.find(";")]
         if all.find("semester") != -1: semester = all[all.find("semester") + 9 : all.find("semester")+15]
-        print(professor)
         query = "https://planetterp.com/api/v1/grades?"
-        if course is not None:
-            query += f"course={course}"
+        if course is not None and professor is not None:
+            query += f"course={course}&professor={professor}"
         elif professor is not None:
             query += f"professor={professor}"
         else:
-            query += f"course={course}&professor={professor}"
+            query += f"course={course}"
 
         if semester is not None:
             query += f"&semester={semester}"
-
+        print(query)
         """Use the tool"""
         raw_data = requests.get(query)
         json_data = raw_data.json()
@@ -269,9 +277,9 @@ class GetGradeDataTool(BaseTool):
             result["C+"] = int(result.get("C+", "0")) + int(i["C+"])
             result["C"] = int(result.get("C", "0")) + int(i["C"])
             result["C-"] = int(result.get("C-", "0")) + int(i["C-"])
-            result["D+"] = int(result.get("D+", "0")) + int(i["D+"])
+            result["D"] = int(result.get("D", "0")) + int(i["D+"])
             result["D"] = int(result.get("D", "0")) + int(i["D"])
-            result["D-"] = int(result.get("D-", "0")) + int(i["D-"])
+            result["D"] = int(result.get("D", "0")) + int(i["D-"])
             result["F"] = int(result.get("F", "0")) + int(i["F"])
             result["W"] = int(result.get("W", "0")) + int(i["W"])
 
@@ -285,8 +293,20 @@ class GetGradeDataTool(BaseTool):
         for j in range(0, len(vals)):
             vals[j] = (vals[j] /total) * 100
 
-        plt.bar(range(len(result)), vals, tick_label=names)
-        plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d%%'))
+        colors = [
+            '#63c27c', '#55ab6c', '#47915b', '#6bb3c7', '#60a3b5', '#5693a3', '#b88dd6', '#a982c4', '#9876b0', '#c286a7',
+            # '#ab7693', '#996a84',
+            '#c94b5b', '#d1904f'
+        ]
+        plt.pie(x=vals, labels=names, autopct='%1.0f%%', colors=colors, startangle=90, pctdistance=0.83,)
+        hole = plt.Circle((0, 0), 0.65, facecolor='white')
+        plt.gcf().gca().add_artist(hole)
+        if professor is not None:
+            title = professor
+        if course is not None:
+            title += " " + course
+        # plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d%%'))
+        plt.title(title + " Grade Data")
         plt.show()
 
 
@@ -388,6 +408,27 @@ conversational_memory = ConversationBufferWindowMemory(
 llm = OpenAI(temperature=0)
 
 
+# agent = initialize_agent(
+#     tools,
+#     llm,
+#     agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
+#     verbose=True,
+#     max_iterations=3,
+#     memory=conversational_memory
+# )
+###################################################################################################
+
+st.set_page_config(page_title='🦜🔗 TestudoAI')
+st.title('🦜🔗 TestudoAI')
+
+def generate_response(input_query):
+    response = agent_chain.run(input_query)
+    return st.success(response)
+
+query_text = st.text_input('Enter your question:', placeholder = 'Ask me anything course/professor related!')
+
+openai_api_key = st.text_input('OpenAI API Key', type='password', disabled=not query_text)
+
 llm_chain = LLMChain(llm=OpenAI(temperature=0), prompt=prompt)
 agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
 agent_chain = AgentExecutor.from_agent_and_tools(
@@ -397,15 +438,11 @@ agent_chain = AgentExecutor.from_agent_and_tools(
     max_iterations=3,
     memory=conversational_memory
 )
-# agent = initialize_agent(
-#     tools,
-#     llm,
-#     agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-#     verbose=True,
-#     max_iterations=3,
-#     memory=conversational_memory
-# )
 
+submitted = st.form_submit_button('Submit', disabled=not query_text)
+if submitted and openai_api_key.startswith('sk-'):
+        with st.spinner('Calculating...'):
+            response = generate_response(query_text)
 
 request = input("What can I help you with? (Press q to quit) ")
 while request != "q":
