@@ -380,7 +380,6 @@ tools = [
     GetSectionTool()
 ]
 
-
 prefix = """You are a Planet Terp AI Assistant that helps students with getting information on classes and professors so that they
 may make informed decisions on which classes to take. Course names are identified as four letters followed by three numbers with no separation. Examples
 include 'math141', 'CMSC330', 'chem135', 'MATH410'. Answer the following requests as best you can. When using tools that take a course name as input, 
@@ -428,34 +427,55 @@ st.title('🦜🔗 TestudoAI')
 openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
 
 def generate_response(input_query):
-    llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
-    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-    agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
-    agent_chain = AgentExecutor.from_agent_and_tools(
-        agent=agent,
-        tools=tools,
-        verbose=True,
-        max_iterations=3,
-        memory=conversational_memory,
-        early_stopping_method="generate"
-    )
     print(openai_api_key)
     print("SDOFDOSF")
     response = agent_chain.run(input_query)
     return st.success(response)
 
 
-with st.form('myform', clear_on_submit=True):
-    query_text = st.text_input('Enter your question:', placeholder='Ask me anything course/professor related!',
-                               disabled=not openai_api_key)
-    submitted = st.form_submit_button('Submit')
-    if not openai_api_key.startswith('sk-'):
-        st.warning('Please enter your OpenAI API key!', icon='⚠')
-    if submitted and openai_api_key.startswith('sk-'):
-            with st.spinner('Calculating...'):
-                response = generate_response(query_text)
+
+query_text = st.chat_input('Enter your question:', placeholder='Ask me anything course/professor related!',
+                           disabled=not openai_api_key)
 
 
+llm_chain = LLMChain(llm=OpenAI(temperature=0), prompt=prompt)
+embeddings = OpenAIEmbeddings()
+agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
+agent_chain = AgentExecutor.from_agent_and_tools(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    max_iterations=3,
+    memory=conversational_memory,
+    early_stopping_method="generate"
+)
+
+if not openai_api_key.startswith('sk-'):
+    st.warning('Please enter your OpenAI API key!', icon='⚠')
+if query_text and openai_api_key.startswith('sk-'):
+        with st.spinner('Calculating...'):
+            st.write(agent_chain.run(query_text))
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if def_prompt := st.chat_input("What is up?"):
+    # Display user message in chat message container
+    with st.chat_message("user"):
+        st.markdown(def_prompt)
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": def_prompt})
+
+    response = f"Echo: {prompt}"
+    # Display assistant response in chat message container
+    with st.chat_message("assistant"):
+        st.markdown(response)
+    st.session_state.messages.append({"role": "assistant", "content": response})
 
 request = input("What can I help you with? (Press q to quit) ")
 # while request != "q":
