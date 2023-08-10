@@ -21,7 +21,7 @@ import streamlit as st
 from langchain.agents.chat import base
 
 
-embeddings = OpenAIEmbeddings()
+
 chat = ChatOpenAI(model="gpt-3.5-turbo")
 
 
@@ -405,7 +405,7 @@ conversational_memory = ConversationBufferWindowMemory(
     return_messages=True
 )
 
-llm = OpenAI(temperature=0)
+#llm = OpenAI(temperature=0)
 
 
 # agent = initialize_agent(
@@ -429,7 +429,8 @@ query_text = st.text_input('Enter your question:', placeholder = 'Ask me anythin
 
 openai_api_key = st.text_input('OpenAI API Key', type='password', disabled=not query_text)
 
-llm_chain = LLMChain(llm=OpenAI(temperature=0), prompt=prompt)
+llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
+embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
 agent_chain = AgentExecutor.from_agent_and_tools(
     agent=agent,
