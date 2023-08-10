@@ -429,6 +429,7 @@ openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
 
 def generate_response(input_query):
     print(openai_api_key)
+    print("SDOFDOSF")
     response = agent_chain.run(input_query)
     return st.success(response)
 
