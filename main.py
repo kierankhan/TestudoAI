@@ -441,9 +441,10 @@ agent_chain = AgentExecutor.from_agent_and_tools(
 )
 
 submitted = st.form_submit_button('Submit', disabled=not query_text)
-if submitted and openai_api_key.startswith('sk-'):
-        with st.spinner('Calculating...'):
-            response = generate_response(query_text)
+with st.form('myform', clear_on_submit=True):
+    if submitted and openai_api_key.startswith('sk-'):
+            with st.spinner('Calculating...'):
+                response = generate_response(query_text)
 
 request = input("What can I help you with? (Press q to quit) ")
 while request != "q":
