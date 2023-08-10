@@ -22,7 +22,7 @@ from langchain.agents.chat import base
 
 
 
-chat = ChatOpenAI(model="gpt-3.5-turbo")
+# chat = ChatOpenAI(model="gpt-3.5-turbo")
 
 
 def create_db_from_review_data(review_data: str, chunk_size: int, overlap: int):
