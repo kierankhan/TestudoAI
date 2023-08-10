@@ -428,6 +428,17 @@ st.title('🦜🔗 TestudoAI')
 openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
 
 def generate_response(input_query):
+    llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+    agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
+    agent_chain = AgentExecutor.from_agent_and_tools(
+        agent=agent,
+        tools=tools,
+        verbose=True,
+        max_iterations=3,
+        memory=conversational_memory,
+        early_stopping_method="generate"
+    )
     print(openai_api_key)
     print("SDOFDOSF")
     response = agent_chain.run(input_query)
@@ -444,17 +455,7 @@ with st.form('myform', clear_on_submit=True):
             with st.spinner('Calculating...'):
                 response = generate_response(query_text)
 
-llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
-embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-agent = ZeroShotAgent(llm_chain=llm_chain, tools=tools, verbose=True, max_iterations=3)
-agent_chain = AgentExecutor.from_agent_and_tools(
-    agent=agent,
-    tools=tools,
-    verbose=True,
-    max_iterations=3,
-    memory=conversational_memory,
-    early_stopping_method="generate"
-)
+
 
 request = input("What can I help you with? (Press q to quit) ")
 # while request != "q":
