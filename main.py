@@ -423,8 +423,13 @@ st.title('🦜🔗 TestudoAI')
 
 
 
-
-openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
+if "openai_api_key" in st.secrets:
+    openai_api_key = st.secrets.openai_api_key
+else:
+    openai_api_key = st.sidebar.text_input("OpenAI API Key", type="password")
+if not openai_api_key:
+    st.info("Enter an OpenAI API Key to continue")
+    st.stop()
 
 def generate_response(input_query):
     print(openai_api_key)
