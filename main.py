@@ -439,8 +439,8 @@ def generate_response(input_query):
 
 
 
-query_text = st.chat_input(placeholder='Ask me anything course/professor related!',
-                           disabled=not openai_api_key)
+# query_text = st.chat_input(placeholder='Ask me anything course/professor related!',
+#                            disabled=not openai_api_key)
 
 
 llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
@@ -455,11 +455,6 @@ agent_chain = AgentExecutor.from_agent_and_tools(
     early_stopping_method="generate"
 )
 
-if not openai_api_key.startswith('sk-'):
-    st.warning('Please enter your OpenAI API key!', icon='⚠')
-if query_text and openai_api_key.startswith('sk-'):
-        with st.spinner('Calculating...'):
-            st.write(agent_chain.run(query_text))
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -469,14 +464,14 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if def_prompt := st.chat_input("What is up?"):
+if user_query := st.chat_input("Ask me anything course/professor related!"):
     # Display user message in chat message container
     with st.chat_message("user"):
-        st.markdown(def_prompt)
+        st.markdown(user_query)
     # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": def_prompt})
+    st.session_state.messages.append({"role": "user", "content": user_query})
 
-    response = f"Echo: {prompt}"
+    response = agent_chain.run(user_query)
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
         st.markdown(response)
