@@ -392,7 +392,7 @@ make sure to stick with the proper format for course names. Please be helpful, b
 like taking extra steps when they are not needed. You have access to the following tools:"""
 suffix = """Begin!"
 
-{chat_history}
+{st.session_state.messages}
 Question: {input}
 {agent_scratchpad}"""
 
