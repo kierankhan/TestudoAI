@@ -400,7 +400,7 @@ prompt = ZeroShotAgent.create_prompt(
     tools,
     prefix=SYSTEM_MESSAGE_PREFIX,
     suffix=suffix,
-    input_variables=["input", "chat_history", "agent_scratchpad"],
+    input_variables=["input", "st.session_state.messages", "agent_scratchpad"],
 )
 
 
