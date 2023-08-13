@@ -392,7 +392,7 @@ make sure to stick with the proper format for course names. Please be helpful, b
 like taking extra steps when they are not needed. You have access to the following tools:"""
 suffix = """Begin!"
 
-{st.session_state.messages}
+{chat_history}
 Question: {input}
 {agent_scratchpad}"""
 
@@ -400,7 +400,7 @@ prompt = ZeroShotAgent.create_prompt(
     tools,
     prefix=SYSTEM_MESSAGE_PREFIX,
     suffix=suffix,
-    input_variables=["input", "st.session_state.messages", "agent_scratchpad"],
+    input_variables=["input", "chat_history", "agent_scratchpad"],
 )
 
 
@@ -481,6 +481,8 @@ if user_query := st.chat_input("Ask me anything course/professor related!"):
     with st.chat_message("assistant"):
         st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
+
+    conversational_memory.save_context({"input": user_query}, {"output": response})
 
 request = input("What can I help you with? (Press q to quit) ")
 # while request != "q":
