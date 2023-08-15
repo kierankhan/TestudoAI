@@ -2,3 +2,4 @@ openai
 langchain
 matplotlib
 streamlit
+tiktoken
