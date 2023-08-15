@@ -20,7 +20,7 @@ import json
 import streamlit as st
 from langchain.agents.chat import base
 
-
+# TODO: For prof and course info give a link to the planetterp page associated with it
 
 # chat = ChatOpenAI(model="gpt-3.5-turbo")
 
@@ -202,19 +202,22 @@ class GetProfReviews(BaseTool):
                   "students' opinion on the professor, use this tool. You will receive documents with reviews of the" \
                   "professor. Please only use factual information that you get from the documents provided. Your answers" \
                   " should be verbose and detailed, and most importantly they should answer the USER'S ORIGINAL QUESTION. " \
-                  "Please make your response around a paragraph long. The input to this tool should be the professors" \
-                  "name with no quotation marks." \
+                  "Please make your response around a paragraph long. The input to this tool should be prof_name, " \
                   "To use the tool you must provide only the following parameter ['prof_name'] " \
                   "ONLY USE THE ONE PARAMETER ['prof_name'] AS THE INPUT AND NOTHING ELSE! For example, you would input " \
-                  "Larry Herman if you wanted reviews for Larry Herman, or Ilchul Yoon if you wanted reviews for him, " \
-                  "or Clyde Kruskal" \
+                  "'prof_name:Larry Herman' if you wanted reviews for Larry Herman, or 'prof_name:Ilchul Yoon' if " \
+                  "you wanted reviews for him, or 'prof_name:Clyde Kruskal'" \
 
     def _run(
         self, prof_name: str
     ):
+
         """Use the tool, but only provide one parameter with the name 'course_name'"""
-        query = f"https://planetterp.com/api/v1/professor?name={prof_name}&reviews=true"
-        data = requests.get(query).json()["reviews"]
+        query = f"https://planetterp.com/api/v1/professor?name={prof_name[10:]}&reviews=true"
+        try:
+            data = requests.get(query).json()["reviews"]
+        except KeyError:
+            return "Key error, 'reviews' not found. Most likely a problem with the input to this tool!"
         review_data = ""
         for i in data:
             review_data += i["review"]
