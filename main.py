@@ -486,6 +486,7 @@ if user_query := st.chat_input("Ask me anything course/professor related!"):
     st.session_state.messages.append({"role": "assistant", "content": response})
 
     conversational_memory.save_context({"input": user_query}, {"output": response})
+    print(conversational_memory.json())
 
 request = input("What can I help you with? (Press q to quit) ")
 # while request != "q":
