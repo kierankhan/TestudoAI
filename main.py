@@ -163,7 +163,8 @@ class GetProfsForCourseTool(BaseTool):
     description = "Use this tool when you need to get the professors (also known as 'profs', " \
                   "'instructors', or 'teachers') that teach a specific course. " \
                   "To use the tool you must provide only the following parameter ['course_name'] " \
-                  "ONLY USE THE ONE PARAMETER ['course_name'] AS THE INPUT AND NOTHING ELSE!" \
+                  "ONLY USE THE ONE PARAMETER ['course_name'] AS THE INPUT AND NOTHING ELSE! For example, your " \
+                  "input should be 'course_name:STAT400' to get the professors that teach STAT400. " \
                   "Course names are identified as four letters followed by three numbers with no separation. Examples " \
                   "include 'math141', 'CMSC330', 'chem135', 'MATH410'. Make sure your input to this tool is in this" \
                   "format with NO SPACES BETWEEN ANY LETTER OR NUMBER!" \
@@ -173,7 +174,7 @@ class GetProfsForCourseTool(BaseTool):
         self, course_name: str
     ):
         """Use the tool, but only provide one parameter with the name 'course_name'"""
-        query = f"https://planetterp.com/api/v1/course?name={course_name}"
+        query = f"https://planetterp.com/api/v1/course?name={course_name[12:]}"
         data = requests.get(query).json()
 
         return data["professors"][-6:]
@@ -198,8 +199,7 @@ class GetProfInfoTool(BaseTool):
     ):
         #prof_name = prof_name[10:]
         """Use the tool, but only provide one parameter with the name 'course_name'"""
-        prof_name = prof_name[10:]
-        query = f"https://planetterp.com/api/v1/professor?name={prof_name}"
+        query = f"https://planetterp.com/api/v1/professor?name={prof_name[10:]}"
         data = requests.get(query).json()
 
         return data
@@ -345,13 +345,13 @@ class GetSectionTool(BaseTool):
                   "MATH141-0101, CMSC132-0206, CHEM135-0302, ENGL101-0401" \
                   "To use the tool you must provide only the following parameter ['section_id'] " \
                   "ONLY USE THE ONE PARAMETER ['section_id'] AS THE INPUT AND NOTHING ELSE!" \
-                  "The input to this tool should be the section ID"
+                  "For example, the input should be 'section_id:MATH140-0201' to get the section info for MATH140-0201"
 
     def _run(
         self, section_id: str
     ):
         """Use the tool, but only provide one parameter with the name 'course_name'"""
-        query = f"https://api.umd.io/v1/courses/sections/{section_id}"
+        query = f"https://api.umd.io/v1/courses/sections/{section_id[11:]}"
         data = requests.get(query).json()
 
         return data
@@ -440,15 +440,36 @@ conversational_memory = ConversationBufferWindowMemory(
 # )
 ###################################################################################################
 
-st.set_page_config(page_title='🦜🔗 TestudoAI')
-st.title('🦜🔗 TestudoAI')
-
-
+st.set_page_config(page_title='🐢🔗 TestudoAI')
+st.title('🐢🔗 TestudoAI')
+"""
+This app is an AI that can help with chooses your UMD courses, professors, and sections. With it, users have 
+the power of PlanetTerp and Testudo's schedule of classes at their fingertips. This is done by calling 
+[PlanetTerp's API](https://planetterp.com/api/) and the [umd.io API](https://beta.umd.io/) using [Langchain]
+(https://docs.langchain.com/docs/)'s Agents and Custom Tooling. More info on the Github!
+"""
+with st.sidebar:
+    st.markdown(
+        "## How to use\n"
+        "1. Enter your [OpenAI API key](https://platform.openai.com/account/api-keys) below🔑\n"  # noqa: E501
+    )
+    openai_api_key = st.sidebar.text_input("OpenAI API Key",
+                                           type="password",
+                                           placeholder="Paste your API key here (sk-...)",
+                                           help="You can get your API key from https://platform.openai.com/account/api-keys."
+                                           )
+    st.markdown("---")
+    st.markdown("# About")
+    st.markdown(
+        "My name's Kieran, a sophomore at UMD studying CS and Math. Course registration season tends to add "
+        "unnecessary stress to students already slammed with exams and homework. I thought I'd make this AI tool "
+        "for people like myself who are used to having 20 PlanetTerp/Testudo tabs open comparing professors and "
+        "courses during this time. Let me know what you think! *This is still in beta, so any feedback about bugs "
+        "or potential improvements are welcome--please email kkhan123@terpmail.umd.edu*"
+    )
 
 if "openai_api_key" in st.secrets:
     openai_api_key = st.secrets.openai_api_key
-else:
-    openai_api_key = st.sidebar.text_input("OpenAI API Key", type="password")
 if not openai_api_key:
     st.info("Enter an OpenAI API Key to continue")
     st.stop()
