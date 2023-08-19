@@ -3,3 +3,4 @@ langchain
 matplotlib
 streamlit
 tiktoken
+faiss-cpu

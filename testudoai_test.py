@@ -442,6 +442,7 @@ agent_chain = AgentExecutor.from_agent_and_tools(
 request = input("What can I help you with? (Press q to quit) ")
 while request != "q":
     agent_chain.run(f"Request: {request}")
+    print(conversational_memory.dict())
     # conversational_memory.chat_memory.add_user_message(request)
     # conversational_memory.chat_memory.add_ai_message(response)
     # print(conversational_memory.chat_memory.messages)

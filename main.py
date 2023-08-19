@@ -1,6 +1,7 @@
 from typing import Optional
 
 import requests
+import os
 from langchain import LLMChain
 from langchain.agents import ZeroShotAgent, AgentExecutor
 from langchain.agents.chat.prompt import (
@@ -18,9 +19,15 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 import json
 import streamlit as st
+
 from langchain.agents.chat import base
 
 # TODO: For prof and course info give a link to the planetterp page associated with it
+
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_PROJECT"] = "testudo-ai"
+os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
+os.environ["LANGCHAIN_API_KEY"] = "ls__463219d2209d4a93bb959bc4575a217f"  # Update to your API key
 
 # chat = ChatOpenAI(model="gpt-3.5-turbo")
 
@@ -31,7 +38,7 @@ def create_db_from_review_data(review_data: str, chunk_size: int, overlap: int):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap)
     docs = text_splitter.split_documents(reviews)
     db = FAISS.from_documents(docs, embeddings)
-    sim_search = db.similarity_search(request)
+    sim_search = db.similarity_search(user_query)
 
     return sim_search
 
@@ -42,7 +49,9 @@ class GetCourseTool(BaseTool):
     description = "Use this tool when you need to get information for a specific course, such as a " \
                   "description, number of credits, gen ed requirments, prerequisites, sections, and more. " \
                   "To use the tool you must provide only the following parameter ['course_name'] " \
-                  "ONLY USE THE ONE PARAMETER ['course_name'] AS THE INPUT AND NOTHING ELSE! " \
+                  "ONLY USE THE ONE PARAMETER ['course_name'] AS THE INPUT AND NOTHING ELSE! For example, " \
+                  "your input would be 'course_name:COMM107' if you needed info for COMM107, or " \
+                  "'course_name:ENES210' if you need info for ENES210" \
                   "When providing information on the course make sure to include a short summary " \
                   "of the course description, how many credits it is, any prerequisites there are, " \
                   "and the average GPA at minimum. Also mention if the course fulfills any gen_ed " \
@@ -52,8 +61,12 @@ class GetCourseTool(BaseTool):
         self, course_name: str
     ):
         """Use the tool, but only provide one parameter with the name 'course_name'"""
+        course_name = course_name[12:]
         query = f"https://api.umd.io/v1/courses/{course_name}"
-        avg_gpa = requests.get(f"https://planetterp.com/api/v1/course?name={course_name}").json()["average_gpa"]
+        try:
+            avg_gpa = requests.get(f"https://planetterp.com/api/v1/course?name={course_name}").json()["average_gpa"]
+        except KeyError:
+            print(query)
         data = requests.get(query).json()
         data[0]["average_gpa"] = avg_gpa
         return data
@@ -409,9 +422,10 @@ prompt = ZeroShotAgent.create_prompt(
 
 conversational_memory = ConversationBufferWindowMemory(
     memory_key='chat_history',
-    k=5,
+    k=6,
     return_messages=True
 )
+
 
 #llm = OpenAI(temperature=0)
 
@@ -440,16 +454,8 @@ if not openai_api_key:
     st.stop()
 
 def generate_response(input_query):
-    print(openai_api_key)
-    print("SDOFDOSF")
     response = agent_chain.run(input_query)
     return st.success(response)
-
-
-
-# query_text = st.chat_input(placeholder='Ask me anything course/professor related!',
-#                            disabled=not openai_api_key)
-
 
 llm_chain = LLMChain(llm=OpenAI(temperature=0, openai_api_key=openai_api_key), prompt=prompt)
 embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
@@ -473,6 +479,19 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 if user_query := st.chat_input("Ask me anything course/professor related!"):
+
+    # Add previous interactions as conversation memory
+    conversational_memory.chat_memory.clear()
+    alt = True
+    for i in st.session_state.messages[-6:]:
+        if alt is True:
+            conversational_memory.chat_memory.add_user_message(str(i))
+            print(i)
+        else:
+            conversational_memory.chat_memory.add_ai_message(str(i))
+            print(i)
+        alt = not alt
+
     # Display user message in chat message container
     with st.chat_message("user"):
         st.markdown(user_query)
@@ -480,20 +499,11 @@ if user_query := st.chat_input("Ask me anything course/professor related!"):
     st.session_state.messages.append({"role": "user", "content": user_query})
 
     response = agent_chain.run(user_query)
+
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
         st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
 
-    conversational_memory.save_context({"input": user_query}, {"output": response})
-    print(conversational_memory.json())
-
-request = input("What can I help you with? (Press q to quit) ")
-# while request != "q":
-#     agent_chain.run(f"Request: {request}")
-#     # conversational_memory.chat_memory.add_user_message(request)
-#     # conversational_memory.chat_memory.add_ai_message(response)
-#     # print(conversational_memory.chat_memory.messages)
-#     request = input("What can I help you with? ")
-
-# grade_data = requests.get(f"https://api.planetterp.com/v1/grades?course={course_name}").json()
+    print("******************************************************************************")
+    print(st.session_state.messages)
