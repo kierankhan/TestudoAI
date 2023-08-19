@@ -445,8 +445,8 @@ st.title('🐢🔗 TestudoAI')
 """
 This app is an AI that can help with chooses your UMD courses, professors, and sections. With it, users have 
 the power of PlanetTerp and Testudo's schedule of classes at their fingertips. This is done by calling 
-[PlanetTerp's API](https://planetterp.com/api/) and the [umd.io API](https://beta.umd.io/) using [Langchain]
-(https://docs.langchain.com/docs/)'s Agents and Custom Tooling. More info on the Github!
+[PlanetTerp's API](https://planetterp.com/api/) and the [umd.io API](https://beta.umd.io/) using [Langchain's](https://docs.langchain.com/docs/) 
+Agents and Custom Tooling. More info on the [Github](https://github.com/kierankhan/TestudoAI)!
 """
 with st.sidebar:
     st.markdown(
