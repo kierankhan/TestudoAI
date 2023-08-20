@@ -322,6 +322,7 @@ class GetGradeDataTool(BaseTool):
         plt.pie(x=vals, labels=names, autopct='%1.0f%%', colors=colors, startangle=90, pctdistance=0.83,)
         hole = plt.Circle((0, 0), 0.65, facecolor='white')
         plt.gcf().gca().add_artist(hole)
+        title = ""
         if professor is not None:
             title = professor
         if course is not None:
