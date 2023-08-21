@@ -64,7 +64,7 @@ class GetCourseTool(BaseTool):
 
 class CourseSearchTool(BaseTool):
     name = "course_search"
-    description = "Use this tool when you need to search for a course based on inputs OTHER THAN the course name. Your " \
+    description = "Use this tool when you need to search for a course based on inputs of credits, dept id, and gen eds. Your " \
                   "input to this tool should be a comma separated list of strings with the parameter name and value desired. " \
                   " The three possible parameters are 'credits', 'gen_ed', and 'dept_id'. Input the corresponding values " \
                   "to the parameters based on what the user has said. " \
@@ -139,6 +139,38 @@ class CourseSearchTool(BaseTool):
 
         if len(minified_data) > 0: return minified_data
         return "There are no courses that match this criteria"
+
+    async def _arun(self):
+        """Use the tool asynchronously."""
+        raise NotImplementedError("custom_search does not support async")
+
+
+class CourseSearchWithDescription(BaseTool):
+    name = "get_courses_by_description"
+    description = "Use this tool when you need to search for courses based on its description, AKA what " \
+                  "the course is about. Do NOT input anything into this tool!" \
+
+    def _run(
+        self, temp:str
+    ):
+        """Use the tool, but only provide one parameter with the name 'course_name'"""
+        page = 1
+        f = open("all_courses.txt", "w")
+        for page in range(1, 50):
+            query = f"https://api.umd.io/v1/courses?per_page=100&page={page}"
+            raw = requests.get(query).json()
+            data = []
+            for i in raw:
+                temp = {}
+                temp["course_id"] = i["course_id"]
+                temp["name"] = i["name"]
+                temp["description"] = i["description"]
+                data.append(temp)
+            f.write(json.dumps(data))
+
+        docs = create_db_from_review_data("all_courses.txt", 1000, 100)
+
+        return docs
 
     async def _arun(self):
         """Use the tool asynchronously."""
@@ -384,7 +416,8 @@ tools = [
     SearchTool(),
     GetGradeDataTool(),
     GetProfReviews(),
-    GetSectionTool()
+    GetSectionTool(),
+    CourseSearchWithDescription()
 ]
 
 

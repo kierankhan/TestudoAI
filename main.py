@@ -75,9 +75,10 @@ class GetCourseTool(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("custom_search does not support async")
 
+
 class CourseSearchTool(BaseTool):
     name = "course_search"
-    description = "Use this tool when you need to search for a course based on inputs OTHER THAN the course name. Your " \
+    description = "Use this tool when you need to search for a course based on credits, dept id, or gen eds ONLY. Your " \
                   "input to this tool should be a comma separated list of strings with the parameter name and value desired. " \
                   " The three possible parameters are 'credits', 'gen_ed', and 'dept_id'. Input the corresponding values " \
                   "to the parameters based on what the user has said. " \
@@ -96,18 +97,15 @@ class CourseSearchTool(BaseTool):
         self,
         all: Optional[str] = None,
     ):
-        # print("gened: " + gen_ed + ", credits: " + credits + ", dept_id: " + dept_id)
         credits = None
         gen_ed = None
         dept_id = None
         if all.find("credits:") != -1: credits = all[all.find("credits")+8]
         if all.find("gen_ed") != -1: gen_ed = all[all.find("gen_ed")+7:all.find("gen_ed")+11]
         if all.find("dept_id") != -1: dept_id = all[all.find("dept_id")+8:all.find("dept_id")+12]
-        # if credits is not None: credits = int(credits[-1])
-        # if gen_ed is not None: gen_ed = gen_ed[-4:-1]
-        # if dept_id is not None: dept_id = int(dept_id[len(dept_id)-1])
+
         """Use the tool, but only provide one parameter with the name 'course_name'"""
-        query = "https://api.umd.io/v1/courses?sort=course_id,-credits&per_page=50&page=1"
+        query = "https://api.umd.io/v1/courses?sort=course_id,-credits&per_page=50"
         if credits is not None:
             query += f"&credits={credits}"
         else:
@@ -157,11 +155,33 @@ class CourseSearchTool(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("custom_search does not support async")
 
+
+class CourseSearchWithDescription(BaseTool):
+    name = "get_courses_by_description"
+    description = "Use this tool when you need to search for courses based on their description. For example, " \
+                  "if the user asked 'what are courses relating to data science', use this tool. Other examples " \
+                  "include 'I want to learn about fashion' and 'courses about rocket propulsion'" \
+                  ". Do NOT input anything into this tool!" \
+
+    def _run(
+        self, temp:str
+    ):
+        """Use the tool, but only provide one parameter with the name 'course_name'"""
+
+        docs = create_db_from_review_data("all_courses.txt", 1000, 100)
+
+        return docs
+
+    async def _arun(self):
+        """Use the tool asynchronously."""
+        raise NotImplementedError("custom_search does not support async")
+
+
 class GetProfsForCourseTool(BaseTool):
-    # TODO: Make the amount of professors you get back a parameter
     name = "get_profs_for_course"
     description = "Use this tool when you need to get the professors (also known as 'profs', " \
-                  "'instructors', or 'teachers') that teach a specific course. " \
+                  "'instructors', or 'teachers') that teach a specific course. Do NOT use this tool to get the " \
+                  "professors that teach a specific section of the course, but the course itself. " \
                   "To use the tool you must provide only the following parameter ['course_name'] " \
                   "ONLY USE THE ONE PARAMETER ['course_name'] AS THE INPUT AND NOTHING ELSE! For example, your " \
                   "input should be 'course_name:STAT400' to get the professors that teach STAT400. " \
@@ -182,6 +202,7 @@ class GetProfsForCourseTool(BaseTool):
     async def _arun(self):
         """Use the tool asynchronously."""
         raise NotImplementedError("custom_search does not support async")
+
 
 class GetProfInfoTool(BaseTool):
     name = "get_profs_info"
@@ -208,15 +229,16 @@ class GetProfInfoTool(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("custom_search does not support async")
 
+
 class GetProfReviews(BaseTool):
     name = "get_profs_reviews"
     description = "Use this tool when you need to get the reviews for a specific professor (also known as profs, " \
                   "instructors, or teachers). If the user wants to know if a professor is good or bad, or other " \
                   "students' opinion on the professor, use this tool. You will receive documents with reviews of the" \
-                  "professor. Please only use factual information that you get from the documents provided. Your answers" \
-                  " should be verbose and detailed, and most importantly they should answer the USER'S ORIGINAL QUESTION. " \
-                  "Please make your response around a paragraph long. The input to this tool should be prof_name, " \
-                  "To use the tool you must provide only the following parameter ['prof_name'] " \
+                  "professor. Please only use factual information that you get from the documents provided. Your " \
+                  "answers should be verbose and detailed, and most importantly they should answer the USER'S " \
+                  "ORIGINAL QUESTION. Please make your response around a paragraph long. The input to this tool " \
+                  "should be prof_name, To use the tool you must provide only the following parameter ['prof_name'] " \
                   "ONLY USE THE ONE PARAMETER ['prof_name'] AS THE INPUT AND NOTHING ELSE! For example, you would input " \
                   "'prof_name:Larry Herman' if you wanted reviews for Larry Herman, or 'prof_name:Ilchul Yoon' if " \
                   "you wanted reviews for him, or 'prof_name:Clyde Kruskal'" \
@@ -224,8 +246,6 @@ class GetProfReviews(BaseTool):
     def _run(
         self, prof_name: str
     ):
-
-        """Use the tool, but only provide one parameter with the name 'course_name'"""
         query = f"https://planetterp.com/api/v1/professor?name={prof_name[10:]}&reviews=true"
         try:
             data = requests.get(query).json()["reviews"]
@@ -330,8 +350,8 @@ class GetGradeDataTool(BaseTool):
         # plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%d%%'))
         plt.title(title + " Grade Data")
         plt.show()
-        st.pyplot(plt)
-
+        with st.container():
+            st.pyplot(plt)
 
         return result
 
@@ -341,9 +361,10 @@ class GetGradeDataTool(BaseTool):
 
 class GetSectionTool(BaseTool):
     name = "get_section"
-    description = "Use this tool when you need to get information about a specific section. A section ID is the " \
-                  "course name followed by a dash and a four digit number. The following are examples of section IDs: " \
-                  "MATH141-0101, CMSC132-0206, CHEM135-0302, ENGL101-0401" \
+    description = "Use this tool when you need to get information about a specific section. This could include " \
+                  "the professor/instructor teaching it, open seats, waitlist spots, meeting times, etc.. " \
+                  "A section ID is the course name followed by a dash and a four digit number. The following " \
+                  "are examples of section IDs: MATH141-0101, CMSC132-0206, CHEM135-0302, ENGL101-0401" \
                   "To use the tool you must provide only the following parameter ['section_id'] " \
                   "ONLY USE THE ONE PARAMETER ['section_id'] AS THE INPUT AND NOTHING ELSE!" \
                   "For example, the input should be 'section_id:MATH140-0201' to get the section info for MATH140-0201"
@@ -393,13 +414,13 @@ class SearchTool(BaseTool):
 ###################################TOOLS DONE#####################################################################
 tools = [
     GetCourseTool(),
-    CourseSearchTool(),
     GetProfsForCourseTool(),
     GetProfInfoTool(),
     SearchTool(),
     GetGradeDataTool(),
     GetProfReviews(),
-    GetSectionTool()
+    GetSectionTool(),
+    CourseSearchWithDescription()
 ]
 
 prefix = """You are a Planet Terp AI Assistant that helps students with getting information on classes and professors so that they
@@ -523,7 +544,7 @@ if user_query := st.chat_input("Ask me anything course/professor related!"):
     response = agent_chain.run(user_query)
 
     # Display assistant response in chat message container
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar="🐢"):
         st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
 
