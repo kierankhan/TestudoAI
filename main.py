@@ -29,8 +29,6 @@ os.environ["LANGCHAIN_PROJECT"] = "testudo-ai"
 os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
 os.environ["LANGCHAIN_API_KEY"] = "ls__463219d2209d4a93bb959bc4575a217f"  # Update to your API key
 
-# chat = ChatOpenAI(model="gpt-3.5-turbo")
-
 
 def create_db_from_review_data(review_data: str, chunk_size: int, overlap: int):
     loader = TextLoader(review_data)
@@ -46,12 +44,12 @@ def create_db_from_review_data(review_data: str, chunk_size: int, overlap: int):
 # TOOLS
 class GetCourseTool(BaseTool):
     name = "get_course"
-    description = "Use this tool when you need to get information for a specific course, such as a " \
+    description = "Use this tool when you need to get information about a specific course, such as a " \
                   "description, number of credits, gen ed requirments, prerequisites, sections, and more. " \
                   "To use the tool you must provide only the following parameter ['course_name'] " \
                   "ONLY USE THE ONE PARAMETER ['course_name'] AS THE INPUT AND NOTHING ELSE! For example, " \
-                  "your input would be 'course_name:COMM107' if you needed info for COMM107, or " \
-                  "'course_name:ENES210' if you need info for ENES210" \
+                  "your input would be 'course_name:COMM107' if you needed info about COMM107, or " \
+                  "'course_name:ENES210' if you need info about ENES210" \
                   "When providing information on the course make sure to include a short summary " \
                   "of the course description, how many credits it is, any prerequisites there are, " \
                   "and the average GPA at minimum. Also mention if the course fulfills any gen_ed " \
@@ -68,7 +66,11 @@ class GetCourseTool(BaseTool):
         except KeyError:
             print(query)
         data = requests.get(query).json()
-        data[0]["average_gpa"] = avg_gpa
+        try:
+            data[0]["average_gpa"] = avg_gpa
+        except UnboundLocalError:
+            return f"There was a problem getting info about {course_name}. It may exist in the Testudo database but" \
+                   f"is no longer offered."
         return data
 
     async def _arun(self):
@@ -277,8 +279,8 @@ class GetGradeDataTool(BaseTool):
                   "If the user provides a semester, use that as the input ['semester']. The input to semester will " \
                   "be a six digit number where the first four digits are the year and the last two numbers specify " \
                   "fall or spring. 01 means Spring and 08 means Fall. For example, 202001 means Spring 2020." \
-                  "Your response should the course name and/or professor and a very brief summarization of the grade data " \
-                  ". You should draw conclusions based off this data on whether this is a favorable grade distribution or not."
+                  "Your response should include the course name and/or professor and you should draw conclusions" \
+                  " based off this data on whether this is a favorable grade distribution or not."
 
     def _run(
         self,
@@ -333,6 +335,11 @@ class GetGradeDataTool(BaseTool):
             total += i
         for j in range(0, len(vals)):
             vals[j] = (vals[j] /total) * 100
+        gr_dta = []
+        for k in range(0, len(names)):
+            temp = {}
+            temp[names[k]] = vals[k]
+            gr_dta.append(temp)
 
         colors = [
             '#63c27c', '#55ab6c', '#47915b', '#6bb3c7', '#60a3b5', '#5693a3', '#b88dd6', '#a982c4', '#9876b0', '#c286a7',
@@ -353,7 +360,7 @@ class GetGradeDataTool(BaseTool):
         with st.container():
             st.pyplot(plt)
 
-        return result
+        return gr_dta
 
     async def _arun(self):
         """Use the tool asynchronously."""
@@ -465,7 +472,7 @@ conversational_memory = ConversationBufferWindowMemory(
 st.set_page_config(page_title='🐢🔗 TestudoAI')
 st.title('🐢🔗 TestudoAI')
 """
-This app is an AI that can help with choosing your UMD courses, professors, and sections. With it, users have 
+TestudoAI is an AI Chat Bot that can help with choosing your UMD courses, professors, and sections. With it, users have 
 the power of PlanetTerp and Testudo's schedule of classes at their fingertips. This is done by calling 
 [PlanetTerp's API](https://planetterp.com/api/) and the [umd.io API](https://beta.umd.io/) using [Langchain's](https://docs.langchain.com/docs/) 
 Agents and Custom Tooling. More info on the [Github](https://github.com/kierankhan/TestudoAI)!
@@ -487,7 +494,7 @@ with st.sidebar:
         "unnecessary stress to students already slammed with exams and homework. I thought I'd make this AI tool "
         "for people like myself who are used to having 20 PlanetTerp/Testudo tabs open comparing professors and "
         "courses during this time. Let me know what you think! *This is still in beta, so any feedback about bugs "
-        "or potential improvements are welcome--please email kkhan123@terpmail.umd.edu*"
+        "or potential improvements is welcome--please email kkhan123@terpmail.umd.edu*"
     )
 
 if "openai_api_key" in st.secrets:
