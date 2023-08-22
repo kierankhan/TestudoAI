@@ -22,6 +22,7 @@ Implemented with [Matplotlib](https://matplotlib.org/3.5.3/api/_as_gen/matplotli
 <img src="public/gr_data_ss.png" alt="Logo" width="600px">
 </a>
 </h3>
+
 ### Conversational Memory
 Conversational Memory has been implemented with TestudoAI, meaning that it remembers past interactions as context. The result is that talking to TestudoAI has a natural 
 flow of conversation without the user having to unnecessarily repeat information.
