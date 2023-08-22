@@ -16,6 +16,12 @@ LangChain's [MRKL](https://arxiv.org/abs/2205.00445) Agent is able to leverage c
 8 different tools, all of which call the [umd.io](https://beta.umd.io/) and/or the [PlanetTerp](https://planetterp.com/api/) API's. Because these APIs stay up-to-date with
 course seats, grade data, and professor reviews, TestudoAI is able to be dynamic in that it is providing accurate and up-to-date information where a pre-trained model could 
 not. 
+### Grade Data
+Implemented with [Matplotlib](https://matplotlib.org/3.5.3/api/_as_gen/matplotlib.pyplot.html), TestudoAI is able to supply the grade distribution for a desired course or professor (or both!). Simply ask for the grade data users will be given a pie chart showing grade data that is up to data with PlanetTerp.
+<h3 align="center">
+<img src="public/gr_data_ss.png" alt="Logo" width="600px">
+</a>
+</h3>
 ### Conversational Memory
 Conversational Memory has been implemented with TestudoAI, meaning that it remembers past interactions as context. The result is that talking to TestudoAI has a natural 
 flow of conversation without the user having to unnecessarily repeat information.
