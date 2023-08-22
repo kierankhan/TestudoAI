@@ -490,6 +490,11 @@ with st.sidebar:
                                            help="You can get your API key from https://platform.openai.com/account/api-keys."
                                            )
     st.markdown("---")
+    st.selectbox('Example questions you can ask',
+                 ("I want to learn about rocket propulsion",
+                  "Does Larry Herman have hard exams?",
+                  "What's the grade distribution for MATH141?",
+                  "What is COMM107 about?"))
     st.markdown("# About")
     st.markdown(
         "My name's Kieran, a sophomore at UMD studying CS and Math. Course registration season tends to add "
