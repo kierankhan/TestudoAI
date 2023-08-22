@@ -20,6 +20,12 @@ not.
 Conversational Memory has been implemented with TestudoAI, meaning that it remembers past interactions as context. The result is that talking to TestudoAI has a natural 
 flow of conversation without the user having to unnecessarily repeat information.
 <h3 align="center">
-<img src="public/ss_2.png" alt="Logo" width="800px">
+<img src="public/conv_mem_ss.png" alt="Logo" width="600px">
 </a>
 </h3>
+
+### Vector Stores, Embeddings, and FAISS Similarity Search
+A big part of what makes TestudoAI useful is that it can access large amounts of data supplied by the previously mentioned APIs and give the user only the relevant summarized version
+of that data. However, this was actually challenging to implement since the GPT-3.5 LLM can be supplied a maximum of 4096 tokens (around 3000 words). This was a problem because 
+all of the review data for one professor could easily surpass that max token count. To be able to give the LLM the review data without surpassing the max token count, the following
+had to be implemented: The review data requested from the API had to first be split up into chunks of 800 tokens, converted to something called [Vector Embeddings](https://cloud.google.com/blog/topics/developers-practitioners/meet-ais-multitool-vector-embeddings), then put into a [Vector Store](https://python.langchain.com/docs/modules/data_connection/vectorstores/) which provide efficient storage and retrieval by storing data as vectors. Finally, [FAISS Similary Search](https://engineering.fb.com/2017/03/29/data-infrastructure/faiss-a-library-for-efficient-similarity-search/) was performed to retrieve only the relevent chunks of review data based on the user request.
