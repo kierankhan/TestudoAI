@@ -236,7 +236,9 @@ class GetProfReviews(BaseTool):
     name = "get_profs_reviews"
     description = "Use this tool when you need to get the reviews for a specific professor (also known as profs, " \
                   "instructors, or teachers). If the user wants to know if a professor is good or bad, or other " \
-                  "students' opinion on the professor, use this tool. You will receive documents with reviews of the" \
+                  "students' opinion on the professor, use this tool. For example, if the user inputs 'is Clyde" \
+                  " Kruskal hard?', or 'is Konstantinos Pozoukidis good' use this tool. You will receive " \
+                  "documents with reviews of the" \
                   "professor. Please only use factual information that you get from the documents provided. Your " \
                   "answers should be verbose and detailed, and most importantly they should answer the USER'S " \
                   "ORIGINAL QUESTION. Please make your response around a paragraph long. The input to this tool " \
