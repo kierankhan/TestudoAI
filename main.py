@@ -44,7 +44,8 @@ def create_db_from_review_data(review_data: str, chunk_size: int, overlap: int):
 # TOOLS
 class GetCourseTool(BaseTool):
     name = "get_course"
-    description = "Use this tool when you need to get information about a specific course, such as a " \
+    description = "Use this tool when you need to get information about a course that the user has specifically " \
+                  "asked about. The information you want to find about this course may include the" \
                   "description, number of credits, gen ed requirments, prerequisites, sections, and more. " \
                   "To use the tool you must provide only the following parameter ['course_name'] " \
                   "ONLY USE THE ONE PARAMETER ['course_name'] AS THE INPUT AND NOTHING ELSE! For example, " \
@@ -209,13 +210,12 @@ class GetProfsForCourseTool(BaseTool):
 class GetProfInfoTool(BaseTool):
     name = "get_profs_info"
     description = "Use this tool when you need to get information about a specific professor (also known as 'profs', " \
-                  "'instructors', or 'teachers'). This includes what courses the professors teach, average gpa, and more. " \
+                  "'instructors', or 'teachers'). This includes what courses the professors teach and average gpa" \
                   "To use the tool you must provide only the following parameter ['prof_name'] " \
                   "ONLY USE THE ONE PARAMETER ['prof_name'] AS THE INPUT AND NOTHING ELSE! For example, your input " \
                   "would be 'prof_name:Shalin Parekh' if you needed info on Shalin Parekh, or 'prof_name:Yumin Yan' " \
                   "if you needed info on Yumin Yan" \
-                  "The input to this tool should be the professors full name as given by the user. Provide a short " \
-                  "summary of the professor, including what courses he/she teaches, type, and average rating."
+                  "The input to this tool should be the professors full name as given by the user."
 
     def _run(
         self, prof_name: str
